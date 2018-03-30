@@ -1,28 +1,30 @@
 #!/usr/bin/env bash
-# In bash how to process multiple matches a single line?
+# sed: How to conditionally insert text multiple times in a single line?
 #
-#I have a pattern, "wink", which my appear zero or
-#or more times on a line and I want to add some text, my
-#last name "saville", if "saville" isn't already present.
+# I have a pattern, "wink", which my appear zero or
+# or more times on a line and I want to conditionally add
+# my last name, "saville" if it isn't already present.
 
 process_line () {
-	# Process the parameter 
-	echo "wink saville wink saville"
+	# This replaces "wink" with "wink saville" unconditionally
+	# How to make it conditional?
+	echo $(sed -E 's/([[:space:]]*)wink([[:space:]]*)/\1wink saville\2/g' <<<"$@")
 }
 
-count_wink_saville () {
-	words="$(grep -o 'wink' <<< $1)"
-	echo "$(wc -w <<< "$words")"
+test_expect_success () {
+	pattern=$1
+	expect=$2
+	result=$(process_line $pattern)
+	if test "$result" = "$expect"; then
+		echo -e "OK   with '$pattern'\n      got '$expect'"
+	else
+		echo -e "FAIL with '$pattern'\n expected '$expect'\n      was '$result'"
+	fi
 }
 
-result=$(process_line "wink wink")
-test "$result" = "wink saville wink saville" && echo OK || echo FAIL
-test "$(process_line 'wink wink')" = "wink saville wink saville" && echo OK || echo FAIL
-test $(count_wink_saville "$result") = "2" && echo OK || echo FAIL
-#test $(process_line "wink") = "wink saville" && echo OK || echo FAIL
-#test $(process_line "abc") = "abc" && echo OK || echo FAIL
-#test $(process_line " wink saville wink") = " wink saville wink saville" && echo OK || echo FAIL
-#test $(process_line " wink saville yo wink") = " wink saville yo wink saville" && echo OK || echo FAIL
-
-#result=$(process_line "$@")
-#printf "found %s 'wink saville's" $count_wink_saville $result
+test_expect_success "wink" "wink saville"
+test_expect_success "abc" "abc"
+test_expect_success "wink wink" "wink saville wink saville"
+test_expect_success "hi wink, yo wink" "hi wink saville, yo wink saville"
+test_expect_success "wink saville wink" "wink saville wink saville"
+test_expect_success "wink saville yo wink" "wink saville yo wink saville"
