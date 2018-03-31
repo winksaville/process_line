@@ -7,8 +7,12 @@
 
 process_line () {
 	# This replaces "wink" with "wink saville" unconditionally
+	#echo $(sed -E 's/([[:space:]]*)wink([[:space:]]*)/\1wink saville\2/g' <<<"$@")
+
 	# How to make it conditional?
-	echo $(sed -E 's/([[:space:]]*)wink([[:space:]]*)/\1wink saville\2/g' <<<"$@")
+	# Here's an attempt but only first occurance
+	# changes looping is not working as I expect:
+	echo $(sed -E '{ : top ; s/(\W*)(wink)(\W+)(saville)/\1\2\3\4/ ; t btm ; s/(\W*)(wink)(\W*)/\1\2 saville\3/ ; : btm ; $!btop }' <<<"$@")
 }
 
 test_expect_success () {
@@ -23,6 +27,7 @@ test_expect_success () {
 }
 
 test_expect_success "wink" "wink saville"
+test_expect_success "wink saville" "wink saville"
 test_expect_success "abc" "abc"
 test_expect_success "wink wink" "wink saville wink saville"
 test_expect_success "hi wink, yo wink" "hi wink saville, yo wink saville"
